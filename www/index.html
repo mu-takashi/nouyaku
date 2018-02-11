@@ -1,0 +1,676 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+  <script src="components/loader.js"></script>
+  <script src="lib/onsenui/js/onsenui.min.js"></script>
+
+  <link rel="stylesheet" href="components/loader.css">
+  <link rel="stylesheet" href="lib/onsenui/css/onsenui.css">
+  <link rel="stylesheet" href="lib/onsenui/css/onsen-css-components.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    input[type="number"] {
+      /* input要素のうちtype属性値がnumberのものに対して装飾 */
+      width:         120px;
+      border:        solid #3c7fb1; /* 枠線 */
+      border-radius: 0.3em;         /* 角丸 */
+      font-size:     25px;          /* フォントサイズ*/
+      text-align:    right;         /* 入力域右寄せ*/
+    }
+    p.label1 {
+      margin-left:   5px;
+      font-size:     15px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+      text-decoration: underline;
+      /*border-bottom: solid 1px red;*/
+    }
+    td.label4 {
+      font-size:     20px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+      width: 100px;
+    }
+    td.label1 {
+      font-size:     20px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+    }
+    td.label2 {
+      font-size:     20px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+      width: 100px;
+      border:solid 1px silver;
+      border-radius: 0.3em;         /* 角丸 */
+    }
+    td.label3 {
+      font-size:     20px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+      width: 40px;
+    }
+    td.label5 {
+      font-size:     20px;          /*フォントサイズ*/
+      font-family:   sans-serif;    /*フォントファミリ*/
+      width: 50px;
+      color: #ff0000;
+    }
+    div.style1 {
+      margin-left:30px;
+      margin-right:30px;
+      border: solid 1px  #3c7fb1;"
+      /*border-radius: 1em;         /* 角丸 */
+    }
+    span.label1 {
+      margin-left:30px;
+    }
+  </style>
+
+  <script>
+    // Page init event
+    document.addEventListener('init', function(event) {
+      var page = event.target;
+
+      if (page.matches('#first-page')) {
+
+        page.querySelector('#push-button').onclick = function() {
+          document.querySelector('#navigator').pushPage('page2.html');
+        };
+
+      } else if (page.matches('#second-page')) {
+
+        page.querySelector('#push-button').onclick = function() {
+          document.querySelector('#navigator').pushPage('page3.html');
+        };
+        page.querySelector('#pop-button').onclick = function() {
+          document.querySelector('#navigator').popPage();
+        };
+       dsp2page();
+
+      } else if (page.matches('#third-page')) {
+
+        page.querySelector('#pop-button').onclick = function() {
+          document.querySelector('#navigator').popPage();
+        };
+       dsp3page();
+
+      }
+    });
+  //変数領域
+    //ユーザ設定値格納域
+    var idBaiVal = 1; //希釈倍率
+
+    var idMenUnt = 10;   //説明書の面積単位        初期値 ㎡(0)
+    var idMenVal = 0;    //説明書の面積            初期値 (0)
+    var idMen_UV = 0;    //説明書の面積（㎡換算値）初期値 (0)
+    var idMenStr = "㎡"; //説明書の面積単位文字列
+
+    var idYakUnt = 11;   //説明書の薬量単位        初期値 ㎖(0)
+    var idYakVal = 0;    //説明書の薬量
+    var idYak_UV = 0;    //説明書の薬量（㎖換算値）
+    var idYakStr = "㎖"; //説明書の面積単位文字列
+
+    var ipMenUnt = 10;   //実際の面積の単位        初期値 ㎡(0)
+    var ipMenVal = 0;    //実際の面積
+    var ipMen_UV = 0;    //実際の面積（㎡換算値）
+    var ipMenStr = "㎡"; //実際の面積単位文字列
+
+    var rrYakVal = 0;    //実際の薬量（㎖換算値）
+    var rrEkiVal = 0;    //実際の液量（㎖換算値）
+    
+    var outStr = "";     //作業域
+    var outVal = 0;      //作業域
+    
+    var rconst = 1000;   //小数点丸め
+    var ktlimit0 = 4;    //整数部桁数
+    var ktlimit1 = 3;    //小数部桁数
+
+    ///////////////////////////////////////////////////
+    //値チェック
+    function chkVal1(value) {
+      outStr = "";
+      outVal = value;
+      if (isNaN(outVal)) {
+        outStr = "Not a Number";
+        outVal = 0;
+        return;
+      }
+      if (outVal <= 0) {
+        outStr = "0.001～9999.999";
+        outVal = 0;
+        return;
+      }
+      var outVals = String(outVal).split('.');
+      if (outVals[1]) {
+        if (outVals[1].length > ktlimit1) {//0.001
+          outStr = "0.001～9999.999";
+          outVal = 0;
+          return;
+        }
+      }
+      if (outVals[0]) {
+        if (outVals[0].length > ktlimit0) {//0.001
+          outStr = "0.001～9999.999";
+          outVal = 0;
+          return;
+        }
+      }
+      if (outVal == 0) {
+        outStr = "0.001～999.999";
+        outVal = 0;
+        return;
+      }
+      //outVal = Math.round(outVal*rconst)/rconst  //少数部丸め
+      //if (outVal < 0) {
+      //  outStr = "Less than 0";
+      //  outVal = 0;
+      //  return;
+      //}
+      //if (9999 < outVal) {
+      //  outStr = "larger than 9999";
+      //  outVal = 9999;
+      //  return;
+      //}
+      return;
+    }
+    ///////////////////////////////////////////////////
+    // 情報入力画面（数値入力）
+    ///////////////////////////////////////////////////
+    //説明書の倍率の値
+    function idBaiVfn(value) {
+      chkVal1(value);
+      idBaiVal = outVal;
+      document.getElementById("idBaiFid").innerHTML = outStr;
+    }
+    ///////////////////////////////////////////////////
+    //説明書の散布面積
+    function idMenVfn(value) {
+      chkVal1(value);
+      idMenVal = outVal;
+      document.getElementById("idMenFid").innerHTML = outStr;
+    }
+    ///////////////////////////////////////////////////
+    //説明書の薬量
+    function idYakVfn(value) {
+      chkVal1(value);
+      idYakVal = outVal;
+      document.getElementById("idYakFid").innerHTML = outStr;
+    }
+    ///////////////////////////////////////////////////
+    //実際の散布面積
+    function ipMenVfn(value) {
+      chkVal1(value);
+      ipMenVal = outVal;
+      document.getElementById("ipMenFid").innerHTML = outStr;
+    }
+    ///////////////////////////////////////////////////
+    // 情報入力画面（単位選択）
+    ///////////////////////////////////////////////////
+    //説明書の面積の単位
+    function idMenTfn(value) {
+      idMenUnt = value;
+      getMenStrfn(value);
+      idMenStr = outStr;
+      document.getElementById("idMenUid").innerHTML = outStr;   //面積（単位）
+    }
+    ///////////////////////////////////////////////////
+    //説明書の薬量単位
+    ///////////////////////////////////////////////////
+    function idYakTfn(value) {
+      idYakUnt = value;
+      getYakStrfn(idYakUnt,1);
+      idYakStr = outStr;
+      document.getElementById("idYakUid").innerHTML = outStr;   //薬量（単位）
+    }
+    ///////////////////////////////////////////////////
+    //実際の面積の単位
+    ///////////////////////////////////////////////////
+    function ipMenTfn(value) {
+      ipMenUnt = value;
+      getMenStrfn(value);
+      ipMenStr = outStr;
+      document.getElementById("ipMenUid").innerHTML = outStr; //面積単位
+    }
+    ///////////////////////////////////////////////////
+    //薬量の単位
+    //  idYakTfn()   index=1:ラジオボタンで選択されたコードから単位文字列を返す
+    //  idYak_UVfn() index=6:ml,l->ml or g,kg->g
+    ///////////////////////////////////////////////////
+    function getYakStrfn(btnNo,index) {
+      var i;
+      outStr = "";
+      for (i = 0; i < yakTaniDb.length; i++) {
+        if (btnNo === yakTaniDb[i][0]) {
+          outStr = yakTaniDb[i][index];
+          break;
+        }
+      }
+    }
+    ///////////////////////////////////////////////////
+    //薬量の倍率
+    //  getYakBaifn()         index=2:単位がmlなら値を1、単位がℓなら値を1000
+    //  rrYakVfn()/rrEkiVfn() index=5:単位がml,ℓならml、単位がg,kgならg
+    ///////////////////////////////////////////////////
+    function getYakBaifn(btnNo,index) {
+      var i;
+      outVal = 1;
+      for (i = 0; i < yakTaniDb.length; i++) {
+        if (btnNo === yakTaniDb[i][0]) {
+          outVal = yakTaniDb[i][index];
+          break;
+        }
+      }
+    }
+    ///////////////////////////////////////////////////
+    //薬量変換配列
+    ///////////////////////////////////////////////////
+    var yakTaniDb = [
+        [11, "㎖",    1, "ℓ" , 1000, 11, "㎖"],
+        [12, "ℓ" , 1000, "ℓ" ,    1, 11, "㎖"],
+        [22, "ｇ",    1, "㎏", 1000, 22, "ｇ"],
+        [23, "㎏", 1000, "㎏",    1, 22, "ｇ"]
+        ];
+    ///////////////////////////////////////////////////
+    //面積の単位(in:btnNo,out:outStr)
+    ///////////////////////////////////////////////////
+    function getMenStrfn(btnNo) {
+      outStr = "";
+      for (var i = 0; i < menTaniDb.length; i++) {
+        if (btnNo === menTaniDb[i][0]) {
+          outStr = menTaniDb[i][1];
+          break;
+        }
+      }
+    }
+    ///////////////////////////////////////////////////
+    //面積の倍率(in:btnNo,out:outVal)
+    ///////////////////////////////////////////////////
+    function getMenBaifn(btnNo) {
+      outVal = 1;
+      for (var i = 0; i < menTaniDb.length; i++) {
+        if (btnNo === menTaniDb[i][0]) {
+          outVal = menTaniDb[i][2];
+          break;
+        }
+      }
+    }
+    ///////////////////////////////////////////////////
+    //面積変換配列
+    ///////////////////////////////////////////////////
+    var menTaniDb = [
+        [10,"㎡" ,       1],
+        [11,"㌃" ,     100],
+        [12,"㌶" ,   10000],
+        [13,"k㎡", 1000000],
+        [21,"坪" ,3.305785],
+        [22,"畝" ,99.17355],
+        [23,"反" ,991.7355],
+        [24,"町" ,9917.355]
+        ];
+    ///////////////////////////////////////////////////
+    //散布量とその単位の倍率変更
+    ///////////////////////////////////////////////////
+    function chgYakfn(kind,val) {
+      var i;
+      for (i = 0; i < yakTaniDb.length; i++) {
+        if (kind === yakTaniDb[i][0]) {
+          if (val >= 1000) {
+            outVal = val / yakTaniDb[i][4];
+            outStr = yakTaniDb[i][3];
+          } else {
+            outVal = val;
+            outStr = yakTaniDb[i][1];
+          }
+          outVal = Math.round(outVal*rconst)/rconst
+          break;
+        }
+      }
+    }
+    ///////////////////////////////////////////////////
+    function chkVal2(value) {
+      outStr = "";
+      if (value <= 0) {
+        outStr="?";
+      }
+    }
+    ///////////////////////////////////////////////////
+    function dsp2page() {
+
+        chkVal2(idBaiVal);
+        document.getElementById("odBaiFid").innerHTML = outStr;
+        outVal = idBaiVal * 1;
+        document.getElementById("odBaiVid").innerHTML = outVal.toLocaleString(); //説明書の倍率
+
+        chkVal2(idYakVal);
+        document.getElementById("odYakFid").innerHTML = outStr;
+        outVal = idYakVal * 1;
+        document.getElementById("odYakVid").innerHTML = outVal.toLocaleString(); //説明書の薬量（値）
+        document.getElementById("odYakUid").innerHTML = idYakStr; //説明書の薬量（単位）
+        idYak_UVfn();
+        chkVal2(idYak_UV);
+        document.getElementById("odYAKFid").innerHTML = outStr;
+
+        chkVal2(idMenVal);
+        document.getElementById("odMenFid").innerHTML = outStr;
+        outVal = idMenVal * 1;
+        document.getElementById("odMenVid").innerHTML = outVal.toLocaleString(); //説明書の面積
+        document.getElementById("odMenUid").innerHTML = idMenStr; //説明書の面積単位
+        idMen_UVfn();
+        chkVal2(idMen_UV);
+        document.getElementById("odMENFid").innerHTML = outStr;
+
+        chkVal2(ipMenVal);
+        document.getElementById("opMenFid").innerHTML = outStr;
+        outVal = ipMenVal * 1;
+        document.getElementById("opMenVid").innerHTML = outVal.toLocaleString(); //実際の面積
+        document.getElementById("opMenUid").innerHTML = ipMenStr; //実際の面積単位
+        ipMen_UVfn();
+        chkVal2(ipMen_UV);
+        document.getElementById("opMENFid").innerHTML = outStr;
+    }
+    ///////////////////////////////////////////////////
+    //説明書の散布面積(㎡換算)
+    ///////////////////////////////////////////////////
+    function idMen_UVfn() {
+      getMenBaifn(idMenUnt);                               //倍率取得
+      idMen_UV = idMenVal * outVal;
+      outVal = idMen_UV;
+      document.getElementById("odMENVid").innerHTML = outVal.toLocaleString(); //面積（㎡換算）
+      //rrYakVfn();                     //薬量とその単位設定→散布量とその単位設定
+    }
+    ///////////////////////////////////////////////////
+    // 薬量(ml換算)
+    ///////////////////////////////////////////////////
+    //説明書の薬量(ml/g換算)
+    function idYak_UVfn() {
+      getYakBaifn(idYakUnt,2);                                    //ℓなら1000倍
+      idYak_UV = idYakVal * outVal;
+      outVal = idYak_UV;
+      document.getElementById("odYAKVid").innerHTML = outVal.toLocaleString();
+      getYakStrfn(idYakUnt,6);                                   //ml,l->ml or g,kg->g
+      document.getElementById("odYAKUid").innerHTML = outStr;
+      document.getElementById("odYAKUBid").innerHTML = outStr;
+      //rrYakVfn();//薬量とその単位設定→散布量とその単位設定
+    }
+    ///////////////////////////////////////////////////
+    //実際の散布面積(㎡換算)
+    ///////////////////////////////////////////////////
+    function ipMen_UVfn() {
+      getMenBaifn(ipMenUnt);
+      ipMen_UV = ipMenVal * outVal;
+      outVal = ipMen_UV;
+      document.getElementById("opMENVid").innerHTML = outVal.toLocaleString(); //面積（㎡換算）
+      //rrYakVfn();                     //薬量とその単位設定→散布量とその単位設定
+    }
+    ///////////////////////////////////////////////////
+    function dsp3page() {
+      rrYakVfn();                     //薬量とその単位設定→散布量とその単位設定
+      rrEkiVfn();                     //散布量とその単位設定
+      rrSuiVfn();                     //水量とその単位設定
+    }
+    ///////////////////////////////////////////////////
+    //薬量とその単位設定
+    ///////////////////////////////////////////////////
+    function rrYakVfn() {
+      if (ipMen_UV == 0 || idMen_UV == 0) {
+        rrYakVal = idYak_UV;
+      } else {
+        rrYakVal = idYak_UV * ipMen_UV / idMen_UV;            //薬量（㎖換算）
+      }
+      getYakBaifn(idYakUnt,5);    //ml,l->ml or g,kg->g //mlの場合、outValには11(ml)が格納される
+      chgYakfn(outVal, rrYakVal); //薬量とその単位変更(ml->ml or l, g->g or kg)
+      document.getElementById("rrYakVid").innerHTML = outVal.toLocaleString(); //実際の薬量（値）
+      document.getElementById("rrYakUid").innerHTML = outStr; //実際の薬量（単位）
+      //rrEkiVfn();
+    }
+    ///////////////////////////////////////////////////
+    //散布量とその単位設定
+    ///////////////////////////////////////////////////
+    function rrEkiVfn() {
+      rrEkiVal = rrYakVal * idBaiVal;  //実際の散布液量（㎖換算）
+      getYakBaifn(idYakUnt,5);    //ml,l->ml or g,kg->g //mlの場合、outValには11(ml)が格納される
+      chgYakfn(outVal, rrEkiVal); //散布量とその単位変更(ml->ml or l, g->g or kg)
+      document.getElementById("rrEkiVid").innerHTML = outVal.toLocaleString();//散布液量（値）
+      document.getElementById("rrEkiUid").innerHTML = outStr;//散布液量（単位）
+    }
+    ///////////////////////////////////////////////////
+    //散布量とその単位設定
+    ///////////////////////////////////////////////////
+    function rrSuiVfn() {
+      rrSuiVal = rrEkiVal - rrYakVal;  //実際の水量（㎖換算）
+      getYakBaifn(idYakUnt,5);    //ml,l->ml or g,kg->g //mlの場合、outValには11(ml)が格納される
+      chgYakfn(outVal, rrSuiVal); //水量とその単位変更(ml->ml or l, g->g or kg)
+      document.getElementById("rrSuiVid").innerHTML = outVal.toLocaleString();//水量（値）
+      document.getElementById("rrSuiUid").innerHTML = outStr;//水量（単位）
+    }
+    ///////////////////////////////////////////////////
+  </script>
+</head>
+<body>
+  <ons-navigator id="navigator" page="page1.html"></ons-navigator>
+
+  <ons-template id="page1.html">
+    <ons-page id="first-page">
+      <ons-toolbar>
+        <div class="center">情報入力</div>
+      </ons-toolbar>
+
+      <div class="content" style="text-align: left">
+        <!--/////////////////////////////////////-->
+        <!--<hr style="margin-top:50px">-->
+        <p class="label1">説明書情報を入力</p>
+        <div style="margin-left:10px">面積の単位：</div>
+
+        <div class="style1">
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(10)" checked>㎡
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(11)">㌃
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(12)">㌶
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(13)">k㎡
+        </div>
+        <!--
+        <div class="style1">
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(21)">坪
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(22)">畝
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(23)">反
+          <input type="radio" name="idMenTnm" onClick="idMenTfn(24)">町
+        </div>
+        -->
+        <div style="margin-left:10px">薬量の単位：</div>
+        <div class="style1">
+          <input type="radio" name="idYakTnm" onClick="idYakTfn(11)" checked>㎖
+          <input type="radio" name="idYakTnm" onClick="idYakTfn(12)">ℓ
+        <!--
+        </div>
+        <div class="style1">
+        -->
+          <input type="radio" name="idYakTnm" onClick="idYakTfn(22)">ｇ
+          <input type="radio" name="idYakTnm" onClick="idYakTfn(23)">㎏
+        </div>
+        </br>
+        <!--/////////////////////////////////////-->
+        <!-- ons-rowは各列長が同じ。長さ変更時個々の列にwidth指定必要-->
+        <table style="margin-left:10px">
+          <div>
+            <tr><td>希釈倍率</td><td>:</td>
+              <td align="right">
+                <input type="number"
+                id="idBaiVid" onchange="idBaiVfn(this.value)"></td>
+              <td id="idBaiUid">倍</td>
+              <td class="label5" id="idBaiFid"></td>
+            </tr>
+          </div>
+          <div>
+            <tr><td>散布面積</td><td>:</td>
+              <td align="right">
+                <input type="number" 
+                id="idMenVid" onchange="idMenVfn(this.value)"></td>
+              <td id="idMenUid">㎡</td>
+              <td class="label5" id="idMenFid"></td>
+            </tr>
+          </div>
+          <div>
+            <tr><td>使用薬量</td><td>:</td>
+              <td align="right">
+                <input type="number" 
+                id="idYakVid" onchange="idYakVfn(this.value)"></td>
+              <td id="idYakUid">㎖</td>
+              <td class="label5" id="idYakFid"></td>
+            </tr>
+          </div>
+        </table>
+        <hr>
+        <!--/////////////////////////////////////-->
+        <p class="label1">散布対象情報を入力</p>
+        <div style="margin-left:10px;">面積の単位 ：</div>
+        <div class="style1">
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(10)" checked>㎡
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(11)">㌃
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(12)">㌶
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(13)">k㎡
+        </div>
+        <div class="style1">
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(21)">坪
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(22)">畝
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(23)">反
+          <input type="radio" name="ipMenTnm" onClick="ipMenTfn(24)">町
+        </div>
+        </br>
+        <table style="margin-left:10px;">
+          <div>
+            <tr><td>散布面積</td><td>:</td>
+              <td align="right">
+                <input type="number" 
+                id="ipMenVid" onchange="ipMenVfn(this.value)"></td>
+              <td id="ipMenUid">㎡</td>
+              <td class="label5" id="ipMenFid"></td>
+            </tr>  
+          </div>
+        </table>
+        <hr>
+        <div class="content" style="text-align: center">
+          <ons-button id="push-button">入力確認</ons-button>
+        </div>
+        <!--/////////////////////////////////////-->
+      </div>
+
+    </ons-page>
+  </ons-template>
+
+  <ons-template id="page2.html">
+    <ons-page id="second-page">
+      <ons-toolbar>
+        <div class="left"><ons-back-button>戻る</ons-back-button></div>
+        <div class="center">入力確認</div>
+      </ons-toolbar>
+
+      <div class="content" style="text-align: left">
+        <!--/////////////////////////////////////-->
+        <p class="label1">説明書情報からの入力値</p>
+        <table style="margin-left:10px;">
+          <tr><td class="label4">希釈倍率</td>
+              <td class="label1">:</td>
+              <td class="label2" align="right">
+              <span class="label1" id="odBaiVid">1</span></td>
+              <td   class="label3" id="odBaiUid">倍</td>
+              <td   class="label5" id="odBaiFid"></td>
+          </tr>
+          <tr><td class="label4">散布面積</td>
+              <td class="label1">:</td>
+              <td class="label2" align="right">
+              <span class="label1" id="odMenVid">0</span></td>
+              <td   class="label3" id="odMenUid">㎡</td> 
+              <td   class="label5" id="odMenFid"></td>
+          </tr>  
+          <tr><td class="label4"><small>(㎡換算値)</small></td>
+              <td class="label1">:</td>
+              <td class="label2" align="right">
+              <span class="label1" id="odMENVid">0</span></td>
+              <td   class="label3" id="odMENUid">㎡</td> 
+              <td   class="label5" id="odMENFid"></td>
+          </tr>  
+          <tr><td class="label4">使用薬量</td>
+              <td class="label1">:</td>
+              <td class="label2" align="right" >
+              <span class="label1" id="odYakVid">0</span></td>
+              <td   class="label3" id="odYakUid">㎖</td>
+              <td   class="label5" id="odYakFid"></td>
+          </tr>  
+          <tr><td class="label4"><small>(<span id="odYAKUBid">㎖</span>換算値)</small></td>
+              <td class="label1">:</td>
+              <td class="label2" align="right">
+              <span class="label1" id="odYAKVid">0</span></td>
+              <td   class="label3" id="odYAKUid">㎖</td>
+              <td   class="label5" id="odYAKFid"></td>
+          </tr>
+        </table>
+      　<hr>
+        <!--/////////////////////////////////////-->
+        <p class="label1">散布対象情報からの入力値</p>
+        <table style="margin-left:10px;">
+          <tr>
+            <td     class="label4">散布面積</td>
+            <td     class="label1">:</td>
+            <td     class="label2" align="right">
+              <span class="label1" id="opMenVid">0</span></td>
+            <td     class="label3" id="opMenUid">㎡</td>
+            <td     class="label5" id="opMenFid"></td></tr>
+          <tr>
+            <td     class="label4"><small>(㎡換算値)</small></td>
+            <td     class="label1">:</td>
+            <td     class="label2" align="right">
+              <span class="label1" id="opMENVid">0</span></td>
+            <td     class="label3" id="opMENUid">㎡</td>
+            <td     class="label5" id="opMENFid"></td>
+          </tr>
+        </table>
+        <hr>
+        <div class="content" style="text-align: center">
+          <ons-button id="pop-button">情報入力</ons-button>
+          <ons-button id="push-button">計算結果</ons-button>
+        </div>
+      </div>
+    </ons-page>
+  </ons-template>
+
+  <ons-template id="page3.html">
+    <ons-page id="third-page">
+      <ons-toolbar>
+        <div class="left"><ons-back-button>戻る</ons-back-button></div>
+        <div class="center">計算結果</div>
+      </ons-toolbar>
+
+      <div class="content" style="text-align: left">
+        <!--/////////////////////////////////////-->
+        <p class="label1">散布情報(計算結果)</p>
+        <table style="margin-left:10px;">
+          <tr>
+            <td     class="label4">使用薬量</td>
+            <td     class="label1">:</td>
+            <td     class="label2" align="right">
+              <span class="label1" id="rrYakVid">0</span></td>
+            <td     class="label3" id="rrYakUid">ℓ</td>  
+          </tr>
+          <tr>
+            <td     class="label1">水　　量</td>
+            <td     class="label1">:</td>
+            <td     class="label2" align="right">
+              <span class="label1" id="rrSuiVid">0</span></td>
+            <td     class="label3" id="rrSuiUid">ℓ</td>
+          </tr>
+          <tr>
+            <td     class="label1">散布液量</td>
+            <td     class="label1">:</td>
+            <td     class="label2" align="right">
+              <span class="label1" id="rrEkiVid">0</span></td>
+            <td     class="label3" id="rrEkiUid">ℓ</td>
+          </tr>
+        </table>
+        <hr>
+        <div class="content" style="text-align: center">
+          <ons-button id="pop-button">入力確認</ons-button>
+        </div>
+      </div>
+    </ons-page>
+  </ons-template>
+</body>
+</html>
